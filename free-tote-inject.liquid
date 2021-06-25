@@ -1,4 +1,5 @@
 {% assign TOTE_ID = 40389416157384 %}
+{% assign PRICED_TOTE_ID = 40313426673864 %}
 {% assign 75_DOLLAR_TOTAL = 7500 %}
 
 <script>
@@ -34,11 +35,35 @@
       }
     }
 	
+    const updates = {
+      id: "{{ PRICED_TOTE_ID }}",
+      quantity: 0,
+    }
+    
+    const removePricedTote = async () => {
+      try {
+        await fetch('/cart/change.js' , {
+          method: 'POST',
+          body: JSON.stringify(updates),
+          headers: { 'Content-Type': 'application/json' },
+        })
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    
     const cart = await fetchCart()
     const cartContainsTote = cart.items.some((item) => item.id === {{ TOTE_ID }})
+    const cartContainsPricedTote = cart.items.some((item) => item.id === {{ PRICED_TOTE_ID }})                                         
     const cartTotalAbove75 = cart.items_subtotal_price > {{ 75_DOLLAR_TOTAL }}
+	const cartTotalAbove75WithoutTote = (cart.items_subtotal_price - 3500) > 7500
 
-    if (cartTotalAbove75 && !cartContainsTote) {
+    if (!cartContainsTote && !cartContainsPricedTote && cartTotalAbove75) {
+      await addToteToCart()
+    }
+    
+    if (!cartContainsTote && cartContainsPricedTote && cartTotalAbove75WithoutTote) {
+      await removePricedTote()
       await addToteToCart()
     }
   }
